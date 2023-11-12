@@ -6,13 +6,15 @@ from datetime import datetime, timedelta
 from utils import get_client_data, get_product_data
 import pickle
 import pandas as pd
+from tesseract import get_catalog_numbers
 
 
 class PredictionInput(BaseModel):
     client: str
     procurement: str
     delivery_time: int
-    catalog_number: str
+    catalog_number: str | None = None
+    path_file: str | None = None
     quantity: float
     contract: int
     merck_competitors: int
@@ -33,7 +35,11 @@ class RFModel:
     def predict_output(self, input: PredictionInput) -> PredictionOutput:
         if not self.model:
             raise RuntimeError("Model files are not found!")
-        catalog_numbers = input.catalog_number.split(', ')
+        catalog_numbers = []
+        if input.catalog_number:
+            catalog_numbers = input.catalog_number.split(', ')
+        elif input.path_file:
+            catalog_numbers = get_catalog_numbers(input.path_file)
         data = pd.DataFrame({'client': input.client,
                                'industry': get_client_data(input.client, 'industry'),
                                'company_size': get_client_data(input.client, 'company_size'),
